@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+
 import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import * as Location from 'expo-location';
 import { MapView, Camera, UserLocation } from '@maplibre/maplibre-react-native';
-import type { CameraRef } from '@maplibre/maplibre-react-native';
+import { useUserLocation } from './hooks/useUserLocation';
 
 const OSM_STYLE = {
   version: 8,
@@ -24,40 +24,23 @@ const OSM_STYLE = {
   ],
 };
 
-async function recenterCamera(cameraRef: React.RefObject<CameraRef | null>) {
-  const location = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
-  cameraRef.current?.setCamera({
-    centerCoordinate: [location.coords.longitude, location.coords.latitude],
-    zoomLevel: 12,
-    animationDuration: 800,
-  });
-}
 
 export default function App() {
-  const cameraRef = useRef<CameraRef>(null);
-  const [hasLocation, setHasLocation] = useState(false);
+  const { coords, granted } = useUserLocation();
   const [following, setFollowing] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      setHasLocation(true);
-      setFollowing(true);
-    })();
-  }, []);
+    if (granted) setFollowing(true);
+  }, [granted]);
 
   return (
     <View style={styles.container}>
       <MapView
         style={styles.map}
         mapStyle={OSM_STYLE}
-        onTouchStart={() => setFollowing(false)}
+        onRegionIsChanging={() => setFollowing(false)}
       >
         <Camera
-          ref={cameraRef}
           followUserLocation={following}
           followZoomLevel={12}
           defaultSettings={{
@@ -65,10 +48,10 @@ export default function App() {
             zoomLevel: 5,
           }}
         />
-        {hasLocation && <UserLocation visible />}
+        {granted && <UserLocation visible />}
       </MapView>
 
-      {hasLocation && !following && (
+      {granted && !following && (
         <TouchableOpacity
           style={styles.recenterButton}
           onPress={() => setFollowing(true)}
