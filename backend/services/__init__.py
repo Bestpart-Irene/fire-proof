@@ -25,6 +25,11 @@ from .routing_service import (
     decode_polyline,
 )
 
+from .elevenlabs_service import (
+    text_to_speech,
+    speech_to_text,
+)
+
 __all__ = [
     # Fire
     "fetch_fires",
@@ -45,4 +50,7 @@ __all__ = [
     "get_route",
     "get_route_to_nearest_safe_place",
     "decode_polyline",
+    # Audio
+    "text_to_speech",
+    "speech_to_text",
 ]

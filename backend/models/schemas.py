@@ -109,3 +109,15 @@ class NavigationResponse(BaseModel):
     cell_coverage_status: str = "unknown"
     warnings: list[str] = []
     evacuation_recommended: bool = False
+
+
+class TextToSpeechRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=5000)
+    voice_id: Optional[str] = None
+    model_id: str = "eleven_multilingual_v2"
+    output_format: str = "mp3_44100_128"
+
+
+class SpeechToTextResponse(BaseModel):
+    text: str
+    language_code: Optional[str] = None

@@ -9,6 +9,8 @@ from .schemas import (
     RouteStep,
     SafeRoute,
     NavigationResponse,
+    TextToSpeechRequest,
+    SpeechToTextResponse,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "RouteStep",
     "SafeRoute",
     "NavigationResponse",
+    "TextToSpeechRequest",
+    "SpeechToTextResponse",
 ]
