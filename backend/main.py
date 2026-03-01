@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from typing import Optional, Any, Dict, List, Literal
 from dotenv import load_dotenv
 import os
 import time
+from io import BytesIO
 
 import httpx
 from pydantic import BaseModel, Field
@@ -15,6 +17,8 @@ from models import (
     Coordinate,
     NavigationResponse,
     SafeRoute,
+    TextToSpeechRequest,
+    SpeechToTextResponse,
 )
 from services import (
     fetch_fires,
@@ -24,6 +28,8 @@ from services import (
     estimate_coverage_simple,
     get_route,
     get_route_to_nearest_safe_place,
+    text_to_speech,
+    speech_to_text,
 )
 
 # ----------------------------
@@ -457,3 +463,39 @@ async def generate_guidance(req: GuidanceRequest):
         latency_s=round(latency, 3),
         raw=raw,
     )
+
+@app.post("/api/audio/text-to-speech")
+async def generate_speech(payload: TextToSpeechRequest):
+    """
+    Convert text to speech using ElevenLabs API.
+    Returns audio file in MP3 format.
+    """
+    audio_bytes, content_type = await text_to_speech(
+        text=payload.text,
+        voice_id=payload.voice_id,
+        model_id=payload.model_id,
+        output_format=payload.output_format,
+    )
+
+    return StreamingResponse(
+        BytesIO(audio_bytes),
+        media_type=content_type,
+        headers={
+            "Content-Disposition": "inline; filename=tts-output.mp3",
+        },
+    )
+
+
+@app.post("/api/audio/speech-to-text", response_model=SpeechToTextResponse)
+async def transcribe_speech(
+    file: UploadFile = File(...),
+    model_id: str = Query("scribe_v1"),
+):
+    """
+    Convert speech to text using ElevenLabs Speech-to-Text API.
+    """
+    result = await speech_to_text(file, model_id=model_id)
+    return {
+        "text": result.get("text", ""),
+        "language_code": result.get("language_code"),
+    }
