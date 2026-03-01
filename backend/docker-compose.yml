@@ -2,10 +2,48 @@ services:
   api:
     build: .
     ports:
-      - "8001:8001"
+      - "8001:8000"
     env_file:
       - .env
+    depends_on:
+      - db
+      - vllm
     restart: unless-stopped
+
+  vllm:
+    image: vllm/vllm-openai-rocm:latest
+    # vLLM's Docker image runs the OpenAI-compatible server; we pass args to start serving a model. :contentReference[oaicite:1]{index=1}
+    command: >
+      --model Qwen/Qwen2.5-7B-Instruct
+      --host 0.0.0.0
+      --port 8000
+      --dtype auto
+      --max-model-len 8192
+      --gpu-memory-utilization 0.90
+      --generation-config vllm
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+    ipc: host
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      - HF_HOME=/data/hf
+      # Optional: helps avoid HF rate limits; leave blank if you don't have one
+      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN:-}
+      - TOKENIZERS_PARALLELISM=false
+    volumes:
+      - hf_cache:/data/hf
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/models', timeout=2).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
 
   db:
     image: pgvector/pgvector:pg16
@@ -26,3 +64,4 @@ services:
 
 volumes:
   pgdata:
+  hf_cache:
