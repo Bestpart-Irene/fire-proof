@@ -1,5 +1,5 @@
 # fire-proof
-A Hack 4 Humanity 2026 project
+Fire-Proof is an integrated wildfire safety assistant that provides real-time fire monitoring, AI-generated evacuation guidance, and voice-assisted navigation to help users move from danger to safety.
 # Fire-Proof
 
 ## System Architecture
